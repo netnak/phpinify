@@ -4,35 +4,64 @@ namespace Netnak\Phpinify\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Netnak\Phpinify\Phpinify;
 
 class PhpinifyMiddleware
 {
-	/**
-	 * Handle an incoming request.
-	 *
-	 * @param \Illuminate\Http\Request $request
-	 * @param \Closure $next
-	 * @return mixed
-	 */
-	public function handle(Request $request, Closure $next)
-	{
-		$response = $next($request);
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        
+        
+        $response = $next($request);
 
-		// if (config('phpinify.DoMinify')) {
-			
-			if (method_exists($response, 'content')) {
-				// if there is no content don't replace it
-				if (!$content = $response->content()) {
-					return;
-				}
-				// quick and dirty check for html, just in case a controler happens to be pushing html, check the uri
-				if (stripos($content, '<html') !== false && !request()->is('!/*')) {
-					$minifiedContent = (new Phpinify($content))->getPhpinified();
-					$response->setContent($minifiedContent);
-				}
-			}
-		// }
-		return $response;
-	}
+        if (! config('phpinify.enable_response_minifier', false)) {
+            return $response;
+        }
+
+
+        if ($this->shouldIgnore($request)) {
+            return $response;
+        }
+
+        if ($this->isHtmlResponse($response)) {
+
+            $content = $response->getContent();
+
+            if (! empty($content) && stripos($content, '<html') !== false) {
+                $minified = (new Phpinify($content))->getPhpinified();
+                $response->setContent($minified);
+            }
+        }
+       
+        
+        
+        return $response;
+    }
+
+    /**
+     * Determine if the request should be ignored based on config.
+     */
+    protected function shouldIgnore(Request $request): bool
+    {
+        $ignored = config('phpinify.ignored_paths', ['!/*']);
+        foreach ($ignored as $pattern) {
+            if ($request->is($pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the response is HTML and can be minified.
+     */
+    protected function isHtmlResponse($response): bool
+    {
+        return method_exists($response, 'getContent') &&
+               str_contains(strtolower($response->headers->get('Content-Type', '')), 'text/html');
+    }
 }

@@ -8,44 +8,33 @@ use Netnak\Phpinify\Phpinify;
 
 class PhpinifyReplacer implements Replacer
 {
-	// minify the html before writing to static cache
+	/**
+	 * Minify HTML content before writing to the static cache.
+	 */
 	public function prepareResponseToCache(Response $response, Response $initial)
 	{
-		// if (config('phpinify.DoMinify')) {
-			// dd('here');
+		
+        if (! config('phpinify.enable_static_cache_replacer', false)) {
+			return;
+		}
 
-			$content = $response->getContent();
+		$content = $response->getContent();
 
-			if (!$content || !stripos($content, '<html') !== false) {
-				return;
-			}
+		if (empty($content) || stripos($content, '<html') === false) {
+			return;
+		}
 
-			$minifiedContent = (new Phpinify($content))->getPhpinified();
+		$minifiedContent = (new Phpinify($content))->getPhpinified();
 
-			// replace the app url with the web url
-			$replacedContent = preg_replace(
-				'/\b' . preg_quote(config('app.url'), '/') . '\b/',
-				config('app.web_url'),
-				$minifiedContent
-			);
-
-			// also do the escaped version for where it appears in json
-			$escapedAppUrl = substr(json_encode(config('app.url')), 1, -1);
-			$escapedWebUrl = substr(json_encode(config('app.web_url')), 1, -1);
-
-			$replacedContent = preg_replace(
-				'/\b' . preg_quote($escapedAppUrl, '/') . '\b/',
-				$escapedWebUrl,
-				$replacedContent
-			);
-
-			$response->setContent($replacedContent);
-		// }
+		$response->setContent($minifiedContent);
 	}
 
-	// should never get here with full measure set up correctly!
-	public function replaceInCachedResponse(Response $response)
+	/**
+	 * This method is required by the interface but not used,
+	 * as minification occurs before caching, not after retrieval.
+	 */
+	public function replaceInCachedResponse(Response $response): void
 	{
-		return;
+		// Nothing to replace in cached response.
 	}
 }

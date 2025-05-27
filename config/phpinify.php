@@ -31,6 +31,3 @@ return [
         'doRemoveOmittedHtmlTags' => false,                  // remove ommitted html tags e.g. <p>lall</p> => <p>lall
     ]
 ];
-
-
-
