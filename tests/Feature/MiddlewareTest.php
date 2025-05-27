@@ -15,20 +15,44 @@ class MiddlewareTest extends TestCase
 
         $request = Request::create('/');
 
-        $response = new Response('<html >  <  body>   <h1> Test </h1>   </body>   </html>');
+        // Intentionally messy HTML with spaces around tags and comments
+        $html = <<<HTML
+<!DOCTYPE html>
+<html >  <body>  
+    <!-- This is a comment -->
+    <h1>  Test       </h1>  
+</body>   
+</html>
+HTML;
+
+        $response = new Response($html);
         $response->headers->set('Content-Type', 'text/html');
 
         $next = function ($req) use ($response) {
             return $response;
         };
 
-        config(['phpinify.enable_response_minifier' => true]);
+		
+		// Handle the request through the middleware
 
         $response = $middleware->handle($request, $next);
 
         $content = $response->getContent();
 
-        $this->assertStringNotContainsString('  ', $content);
-        $this->assertStringContainsString('<html><body><h1> Test </h1>', $content);
+        // 1) Comments should be removed
+        $this->assertStringNotContainsString('<!--', $content, 'HTML comments should be removed');
+
+        // 2) Spaces between tags should be removed (e.g., "> <" replaced with "><")
+        $this->assertStringNotContainsString('> <', $content, 'Spaces between tags should be removed');
+
+        // 3) No multiple spaces inside tags (e.g. <html  > or <body  >)
+        $this->assertDoesNotMatchRegularExpression('/<[^>]+ {2,}[^>]*>/', $content, 'Multiple spaces inside tags should be removed');
+
+        // 4) The tag structure should remain intact (basic check)
+        $this->assertStringContainsString('</body>', $content);
+        $this->assertStringContainsString('</html>', $content);
+
+        // 6) Whitespace around tags is trimmed but text node spaces preserved
+        $this->assertStringContainsString('<html><body><h1> Test </h1></body></html>', $content);
     }
 }
