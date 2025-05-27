@@ -1,71 +1,95 @@
 # Phpinify
 
-> Phpinify is a Statamic addon that minifies the response and/or static pages.
+**Phpinify** is a Statamic addon that minifies HTML responses and/or static cached pages using [`voku/html-min`](https://github.com/voku/HtmlMin).
 
-## Features
+---
 
-This addon uses voku/html-min for minification and exposes its setting in the config:
+## 🚀 Features
 
- - doOptimizeViaHtmlDomParser();               // optimize html via "HtmlDomParser()"
- - doRemoveComments();                         // remove default HTML comments (depends on "doOptimizeViaHtmlDomParser(true)")
- - doSumUpWhitespace();                        // sum-up extra whitespace from the Dom (depends on "doOptimizeViaHtmlDomParser(true)")
- - doRemoveWhitespaceAroundTags();             // remove whitespace around tags (depends on "doOptimizeViaHtmlDomParser(true)")
- - doOptimizeAttributes();                     // optimize html attributes (depends on "doOptimizeViaHtmlDomParser(true)")
- - doRemoveHttpPrefixFromAttributes();         // remove optional "http:"-prefix from attributes (depends on "doOptimizeAttributes(true)")
- - doRemoveHttpsPrefixFromAttributes();        // remove optional "https:"-prefix from attributes (depends on "doOptimizeAttributes(true)")
- - doKeepHttpAndHttpsPrefixOnExternalAttributes(); // keep "http:"- and "https:"-prefix for all external links 
- - doMakeSameDomainsLinksRelative([ - example.com - ]); // make some links relative, by removing the domain from attributes
- - doRemoveDefaultAttributes();                // remove defaults (depends on "doOptimizeAttributes(true)" | disabled by default)
- - doRemoveDeprecatedAnchorName();             // remove deprecated anchor-jump (depends on "doOptimizeAttributes(true)")
- - doRemoveDeprecatedScriptCharsetAttribute(); // remove deprecated charset-attribute - the browser will use the charset from the HTTP-Header, anyway (depends on "doOptimizeAttributes(true)")
- - doRemoveDeprecatedTypeFromScriptTag();      // remove deprecated script-mime-types (depends on "doOptimizeAttributes(true)")
- - doRemoveDeprecatedTypeFromStylesheetLink(); // remove "type=text/css" for css links (depends on "doOptimizeAttributes(true)")
- - doRemoveDeprecatedTypeFromStyleAndLinkTag(); // remove "type=text/css" from all links and styles
- - doRemoveDefaultMediaTypeFromStyleAndLinkTag(); // remove "media="all" from all links and styles
- - doRemoveDefaultTypeFromButton();            // remove type="submit" from button tags 
- - doRemoveEmptyAttributes();                  // remove some empty attributes (depends on "doOptimizeAttributes(true)")
- - doRemoveValueFromEmptyInput();              // remove  - value="" -  from empty <input> (depends on "doOptimizeAttributes(true)")
- - doSortCssClassNames();                      // sort css-class-names, for better gzip results (depends on "doOptimizeAttributes(true)")
- - doSortHtmlAttributes();                     // sort html-attributes, for better gzip results (depends on "doOptimizeAttributes(true)")
- - doRemoveSpacesBetweenTags();                // remove more (aggressive) spaces in the dom (disabled by default)
- - doRemoveOmittedQuotes();                    // remove quotes e.g. class="lall" => class=lall
- - doRemoveOmittedHtmlTags();                  // remove ommitted html tags e.g. <p>lall</p> => <p>lall 
+Phpinify wraps the powerful `HtmlMin` engine and exposes its configuration through a publishable config file. You can toggle the following features:
 
-## How to Install
+- `doOptimizeViaHtmlDomParser()` – optimize HTML using the DOM parser  
+- `doRemoveComments()` – remove HTML comments  
+- `doSumUpWhitespace()` – collapse excess whitespace  
+- `doRemoveWhitespaceAroundTags()` – trim whitespace around tags  
+- `doOptimizeAttributes()` – optimize HTML attributes  
+- `doRemoveHttpPrefixFromAttributes()` – strip `http:` from attributes  
+- `doRemoveHttpsPrefixFromAttributes()` – strip `https:` from attributes  
+- `doKeepHttpAndHttpsPrefixOnExternalAttributes()` – preserve prefixes for external links  
+- `doMakeSameDomainsLinksRelative(['example.com'])` – make internal links relative  
+- `doRemoveDefaultAttributes()` – remove default attribute values  
+- `doRemoveDeprecatedAnchorName()` – remove deprecated anchor name attributes  
+- `doRemoveDeprecatedScriptCharsetAttribute()` – remove charset from `<script>` tags  
+- `doRemoveDeprecatedTypeFromScriptTag()` – remove deprecated type from `<script>`  
+- `doRemoveDeprecatedTypeFromStylesheetLink()` – remove `type="text/css"` from CSS links  
+- `doRemoveDeprecatedTypeFromStyleAndLinkTag()` – remove `type="text/css"` globally  
+- `doRemoveDefaultMediaTypeFromStyleAndLinkTag()` – remove `media="all"`  
+- `doRemoveDefaultTypeFromButton()` – remove `type="submit"` from buttons  
+- `doRemoveEmptyAttributes()` – strip empty attributes  
+- `doRemoveValueFromEmptyInput()` – remove `value=""` from empty inputs  
+- `doSortCssClassNames()` – sort class names for better Gzip performance  
+- `doSortHtmlAttributes()` – sort attributes for better Gzip performance  
+- `doRemoveSpacesBetweenTags()` – aggressively trim inter-tag spaces  
+- `doRemoveOmittedQuotes()` – omit unnecessary attribute quotes  
+- `doRemoveOmittedHtmlTags()` – omit redundant HTML tags  
 
-run
+---
 
-``` bash
+## 📦 Installation
+
+Install via Composer:
+
+```bash
 composer require netnak/phpinify
 ```
 
-optionally publish config
+Then publish the config file (optional):
 
-``` bash
-php artisan vendor:publish --tag=phpinify-config  --force
+```bash
+php artisan vendor:publish --tag=phpinify-config --force
 ```
 
-Should set up replacer on boot, but you can permanently add the replacer in config/statamic/static_caching.php
+---
 
-``` bash
- - replacers -  => [
-   ...
-    
+## ⚙️ Configuration
+
+Phpinify auto-registers itself.
+
+To manually ensure it's added as a static caching replacer, edit `config/statamic/static_caching.php`:
+
+```php
+'replacers' => [
+    // ...
     \Netnak\Phpinify\Replacers\PhpinifyReplacer::class,
 ],
 ```
-## How to Use
 
-To enable response minifcation or static minification add the following varibales to your .env:
+---
 
-PHPINIFY_RESPONSE = true
-PHPINIFY_STATIC = true
+## ✅ Usage
 
-The addon config file uses these to enable functionality
+Enable minification via your `.env` file:
 
-enable_response_minifier => env(PHPINIFY_RESPONSE, false)
-enable_static_cache_replacer => env(PHPINIFY_STATIC, false)
+```env
+PHPINIFY_RESPONSE=true
+PHPINIFY_STATIC=true
+```
 
-You can set ignored paths to avoud minification at the top of the config:
+These values toggle options in `config/phpinify.php`:
 
-ignored_paths => [!/*, api/*]
+```php
+'enable_response_minifier' => env('PHPINIFY_RESPONSE', false),
+'enable_static_cache_replacer' => env('PHPINIFY_STATIC', false),
+```
+
+Exclude paths from minification with:
+
+```php
+'ignored_paths' => ['!/*', 'api/*'],
+```
+
+---
+
+## 🪪 License
+
+MIT — see the [LICENSE](LICENSE) file for details.
