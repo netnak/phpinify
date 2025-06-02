@@ -32,6 +32,7 @@ class ServiceProvider extends AddonServiceProvider
 
         $this->registerReplacer();
 
+        // php artisan vendor:publish --tag=phpinify-config --force  
         $this->publishes([
             __DIR__ . '/../config/phpinify.php' => config_path('phpinify.php'),
         ], 'phpinify-config');
